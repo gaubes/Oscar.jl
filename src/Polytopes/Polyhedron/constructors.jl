@@ -58,7 +58,12 @@ and generators of the lineality space (L) can be given as well.
 
 see Def. 2.11 and Def. 3.1  of Joswig, M. and Theobald, T. "Polyhedral and Algebraic Methods in Computational Geometry", Springer 2013.
 """
-function convex_hull(V::AnyVecOrMat; non_redundant::Bool=false)
+function convex_hull(collection)
+    pts = tomatrix(collection)
+    return convex_hull(pts)
+end
+
+function convex_hull(V::AbstractMatrix; non_redundant::Bool=false)
     if !non_redundant
         pm_polytope =
             Polymake.polytope.Polytope{Polymake.Rational}(POINTS = matrix_for_polymake(homogenize(V, 1)))

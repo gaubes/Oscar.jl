@@ -77,7 +77,7 @@ function Base.iterate(iter::VertexPointIterator, index = 1)
         if iszero(vertices[index, 1])
             index += 1
         else
-            return (vertices[index, 2:end], index + 1)
+            return (CombinatorialPoint(vertices[index, 2:end]), index + 1)
         end
     end
 end

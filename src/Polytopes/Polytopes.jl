@@ -76,6 +76,7 @@ export Cone,
     volume
 
 include("helpers.jl")
+include("Particles.jl")
 include("Cone/constructors.jl")
 include("Cone/properties.jl")
 include("Polyhedron/constructors.jl")
