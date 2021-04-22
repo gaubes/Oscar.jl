@@ -3,8 +3,8 @@
     @testset "Polytope From Group Orbit" begin
         G = symmetric_group(4)
         x = [0,1,2,3]
-        M = matrix(ZZ, [permuted(x,g) for g in G])
-        P = convex_hull(M)
+        orbit = [permuted(x,g) for g in G]
+        P = convex_hull(orbit)
         @test ambient_dim(P) == 4
 
         F = facets(P, Polyhedra)
