@@ -32,5 +32,7 @@ const pm = Polymake
         @test length(collect(rays(Cone4))) == 2
         @test codim(Cone4) == 1
         @test codim(Cone3) == 0
+
+        @test Cone1 == positive_hull(rays(Cone1))
     end
 end
