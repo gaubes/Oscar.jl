@@ -41,11 +41,15 @@ end
 A polyhedral cone, not necessarily pointed, defined by the positive hull
 of the `generators`. Redundant rays are allowed in the generators.
 """
-function positive_hull(generators::Union{Oscar.MatElem,AbstractMatrix})
+function positive_hull(generators::AbstractMatrix)
     # TODO: Filter out zero rows
     C=Polymake.polytope.Cone{Polymake.Rational}(INPUT_RAYS =
       matrix_for_polymake(remove_zero_rows(generators)))
     Cone(C)
+end
+function positive_hull(collection)
+    rays = tomatrix(collection)
+    return positive_hull(rays)
 end
 
 

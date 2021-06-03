@@ -14,7 +14,7 @@ function Base.iterate(iter::ConeRayIterator, index = 1)
         return nothing
     end
 
-    return (rays[index, :], index + 1)
+    return (Ray(rays[index, :]), index + 1)
 end
 Base.eltype(::Type{ConeRayIterator}) = Polymake.Vector{Polymake.Rational}
 Base.length(iter::ConeRayIterator) = nrays(iter.cone)
