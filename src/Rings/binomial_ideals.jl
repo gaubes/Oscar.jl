@@ -627,7 +627,9 @@ function cellular_associated_primes(I::MPolyIdeal{fmpq_mpoly}, RQab::MPolyRing =
     #now compute all saturations of the partial character Pm
     PmSat = QabModule.saturations(Pm)
     for P in PmSat
-      new_id = ideal_from_character(P, RQab) + idealDeltaC
+      _new_id = ideal_from_character(P, RQab)
+      @assert base_ring(_new_id) === base_ring(idealDeltaC)
+      new_id = _new_id + idealDeltaC
       push!(associated_primes, new_id)
     end
   end
