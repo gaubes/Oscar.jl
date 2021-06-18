@@ -16,11 +16,9 @@ jobs:
           - '1.4'
           - '1.5'
           - '1.6'
-          - 'nightly'
         julia-arch:
           - x64
         os:
-          - ubuntu-latest
           - macOS-latest
         exclude:
           # Reduce the number of macOS jobs, as fewer can be run in parallel
