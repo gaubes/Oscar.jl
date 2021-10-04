@@ -124,6 +124,9 @@
         "Experimental/divisors.md",
         "Experimental/elliptic_curves.md",
      ],
+     "Space germs" => [
+        "Experimental/space_germs.md"
+     ]
   ],
 
   "References" => "references.md",
