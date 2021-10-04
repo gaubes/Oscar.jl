@@ -54,7 +54,7 @@ Accordingly, all the arithmetic of such elements is carried out regarding them a
 Note that this structure works only for localizations of free polynomial rings. By 
 virtue of commutative algebra, this can be extended to comprise also arbitrary affine 
 algebras ``R = \mathbb k[x_1,\dots,x_n]/I`` via the description of ideals ``I \subset \mathbb k[x_1,\dots,x_n]``. 
-These are modeled by 
+More generally, ideals ``I`` in the localization ``P_{\mathfrak m}`` are modeled by 
 ```@docs
     MPolyIdealLoc{S}
 ```
@@ -74,7 +74,7 @@ The stored data already suggests that, being units, the denominators of the
 generators of an ideal can be discarded. Any routines such as, for example, testing 
 ideal membership ``f \in I \subset P_{\mathfrak m}``, will then fall back to 
 standard basis computation in the singular ring on the backend. This ring can 
-be invoced explicitly by calling
+be invoked explicitly by calling
 ```@docs
     singular_ring_loc(R::MPolyRingLoc{T}; ord::Symbol = :negdegrevlex) where T
 ```

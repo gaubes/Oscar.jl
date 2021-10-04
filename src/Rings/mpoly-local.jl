@@ -242,7 +242,7 @@ end
 @Markdown.doc """
     mutable struct MPolyIdealLoc{S} <: Ideal{S}
 
-An ideal I in an instance of `MPolyRingLoc{S}.
+An ideal I in an instance of `MPolyRingLoc{S}`.
 
 The data being stored consists of 
   * an instance of `BiPolyArrayLoc{S}` for the set of generators of I
