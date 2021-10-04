@@ -128,6 +128,9 @@
 #        "Experimental/elliptic_curves.md",
 #        "Experimental/non_plane_curves.md",
 #     ],
+     "Space germs" => [
+        "Experimental/space_germs.md"
+     ]
   ],
 
   "References" => "references.md",
