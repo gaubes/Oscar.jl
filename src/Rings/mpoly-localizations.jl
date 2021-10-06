@@ -244,9 +244,9 @@ abstract type AbsLocalRing{RingType, RingElemType} <: AbsLocalizedRing{RingType,
 # Localizations of polynomial rings over admissible fields at prime ideals #
 ############################################################################
 @Markdown.doc """
-    mutable struct MPolyLocalRing{BaseRingType} <: AbsLocalRing{MPolyRing{BaseRingType}, MPolyElem{BaseRingType}}
+    mutable struct MPolyLocalRing{BaseRingType, RingType, RingElemType} <: AbsLocalRing{MPolyRing{BaseRingType}, MPolyElem{BaseRingType}}
 
-The localization of a multivariate polynomial ring R = 𝕜[x₁,…,xₙ] over a base field 𝕜 of type `BaseRingType` at a prime ideal P ⊂ R.
+The localization of a multivariate polynomial ring R = 𝕜[x₁,…,xₙ] of type `RingType` over a base field 𝕜 of type `BaseRingType` and with elements of type `RingElemType` at a prime ideal P ⊂ R.
 """
 mutable struct MPolyLocalRing{BaseRingType, RingType, RingElemType} <: AbsLocalRing{MPolyRing{BaseRingType}, MPolyElem{BaseRingType}}
   R::RingType # The parent ring which is being localized
