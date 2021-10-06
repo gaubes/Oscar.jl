@@ -11,7 +11,6 @@ using Oscar
 Oscar provides several models for various local rings. To name a few, let ``R = \mathbb k[x_1,\dots,x_n]/I`` be some finitely generated algebra over a field ``\mathbb k`` for some ideal ``I \subset \mathbb k[x_1,\dots,x_n]``. By abuse of notation, we will identify ideals ``J \subset R`` with their preimages 
 ``J \subset \mathbb k[x_1,\dots,x_n]`` under the canonical projection. Then we have
 
-
 * localizations ``R[f^{-1}]`` at a specific polynomial ``f \in \mathbb{k}[x_1,\dots,x_n]`` (respectively, its residue class in ``R``);
 
 * localizations ``R_{\mathfrak m}`` at a maximal ideal ``\mathfrak m = \langle x_1-a_1,\dots,x_n-a_n\rangle`` with entries ``a_i \in \mathbb{k}``;

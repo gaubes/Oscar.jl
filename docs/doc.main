@@ -121,13 +121,13 @@
   ],
 
   "Geometry" => [
-#     "Curves" => [
-#        "Experimental/introduction.md",
-#        "Experimental/plane_curves.md",
-#        "Experimental/divisors.md",
-#        "Experimental/elliptic_curves.md",
-#        "Experimental/non_plane_curves.md",
-#     ],
+     "Curves" => [
+        "Experimental/introduction.md",
+        "Experimental/plane_curves.md",
+        "Experimental/divisors.md",
+        "Experimental/elliptic_curves.md",
+        "Experimental/non_plane_curves.md",
+     ],
      "Space germs" => [
         "Experimental/space_germs.md"
      ]
