@@ -83,3 +83,95 @@ be invoked explicitly by calling
 Truncated formal power series rings are documented in [Power series models](@ref).
 TODO: What about non-truncated ones?
 
+# A localization framework for commutative rings
+
+Suppose ``R`` is a commutative ring with unit and ``S \subset R`` is a *multiplicatively 
+closed set* containing ``1 \in R``. Then we can form the *localization* of ``R`` at ``S``
+```math
+    R[S^{-1}] = \left\{ \frac{p}{q} : p,q \in R, \, q \in S \right\},
+```
+either as a subset of the quotient field of ``R`` (in case ``R`` is an integral domain), 
+or in the total ring of fractions. See, for instance, [Eis95] for a general construction 
+of localizations.
+
+Oscar provides a general framework for such localizations, originally intended to be used 
+with multivariate polynomial rings ``R`` over some base field ``\mathbb k``. 
+The localizations of such rings are, in general, not finitely 
+generated as algebras over ``\mathbb k``, for instance when localizing at some maximal 
+ideal ``\mathfrak m \subset R``. However, many ideal- and module-theoretic questions in the localization 
+``R[S^{-1}]``, such as e.g. the ideal membership, can be transformed to questions on 
+ideals and modules over the original ring ``R`` and then solved using Groebner- or standard-basis 
+algorithms. This makes it important to regard localizations ``R[S^{-1}]`` as rings with 
+a history of creation from the original pair ``S \subset R``. 
+
+## Localizations 
+
+We now explain the abstract interface that needs to be implemented for any concrete 
+instance of localized rings, starting with 
+```@docs
+    AbsMultSet{RingType, RingElemType}
+```
+The basic functionality that has to be implemented for any concrete type derived from 
+this is to be able to check containment of elements via
+```@docs
+    in(f::RingElemType, S::AbsMultSet{RingType, RingElemType}) where {RingType, RingElemType}
+```
+This is supposed to be an extension of the methods of the function `Base.in`.
+
+A localized ring should then be derived from 
+```@docs
+    AbsLocalizedRing{RingType, RingElemType, MultSetType}
+```
+For any concrete instance of this type the following methods must be implemented:
+```@docs
+    original_ring(W::AbsLocalizedRing{RingType, RingElemType, MultSetType}) where {RingType, RingElemType, MultSetType} 
+```
+```@docs
+    inverted_set(W::AbsLocalizedRing{RingType, RingElemType, MultSetType}) where {RingType, RingElemType, MultSetType}
+```
+Also, conversion of fractions to elements of localized rings must be implemented in the form 
+`(W::AbsLocalizedRing{RingType, RingElemType, MultSetType})(f::AbstractAlgebra.Generic.Frac{RingElemType}) where {RingType, RingElemType, MultSetType}`.
+A minimal implementation of this interface is provided by `LocalizedRing`.
+
+The *elements* of localized rings already mentioned above must be derived from 
+```@docs
+    AbsLocalizedRingElem{RingType, RingElemType, MultSetType}
+```
+For any concrete instance `F` of `AbsLocalizedRingElem` there must be the following 
+methods:
+```@docs
+    fraction(f::T) where {T<:AbsLocalizedRingElem} 
+```
+```@docs
+    parent(f::T) where {T<:AbsLocalizedRingElem}
+```
+A default version of the arithmetic is implemented based on `AbstractAlgebra.Generic.Frac`. 
+Depending on the actual concrete instance, one might wish to provide more fine-tuned methods. 
+
+
+## Local rings
+When localizing at a prime ideal ``P \subset R`` (i.e. ``S = R\setminus P``), the 
+localized ring ``R_P := R[S^{-1}]`` is actually a *local ring*, meaning that it 
+has a unique maximal ideal ``P_P\subset R_P``. These rings are of great importance 
+in algebraic geometry and deserve special attention. The underlying multiplicatively 
+closed set is of the type
+```@docs
+    ComplementOfPrimeIdeal{RingType, RingElemType}
+```
+In addition to the above mentioned methods for multiplicatively closed sets, in this case the user 
+also has to assure that the method `isprime(::Ideal{RingElemType}) -> Boolean` is implemented 
+to check whether or not a given ideal is prime.
+
+A local ring arising from localization at prime ideals is then derived from 
+```@docs
+    AbsLocalRing{RingType, RingElemType, MultSetType}
+```
+A minimal implementation of this in the case of multivariate polynomial rings is given by 
+`MPolyLocalRing`.
+
+Elements of such rings are of type 
+```@docs
+    AbsLocalRingElem{RingType, RingElemType}
+```
+As before, a minimal implementation of this interface is given for multivariate polynomial 
+rings by `MPolyLocalRingElem`.

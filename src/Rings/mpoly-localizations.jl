@@ -22,20 +22,17 @@ import AbstractAlgebra.Ring
 # Multiplicatively closed sets of (commutative) rings                           #
 #################################################################################
 @Markdown.doc """
-    abstract type AbsMultSet{RingType, RingElemType} end
+    AbsMultSet{RingType, RingElemType}
 
-Abstract for a multiplicatively closed set in a commutative (Noetherian) ring 
-R with elements of type `RingElemType`.
+Abstract type for a multiplicatively closed set in a commutative (Noetherian) ring 
+R of type `RingType` with elements of type `RingElemType`.
 """
 abstract type AbsMultSet{RingType, RingElemType} end
 
 @Markdown.doc """
-    function Base.in(f::RingElemType, S<:AbsMultSet{RingType, RingElemType}) where {RingType, RingElemType}
+    in(f::RingElemType, S::AbsMultSet{RingType, RingElemType}) where {RingType, RingElemType}
 
-Part of the required interface for the implementation of concrete types of multiplicatively 
-closed sets S of type `<:AbsMultSet{RingType, RingElemType}` in a ring R of type `RingType`. 
-
-Must return `true` if `f` belongs to `S`; `false` otherwise.
+Returns `true` if `f` belongs to `S`; `false` otherwise.
 
 **Note:** If this routine is not implemented, the function call will default to the 
 execution of an error message. 
@@ -48,7 +45,7 @@ end
 # Localizations of (commutative) rings at multiplicatively closed sets          #
 #################################################################################
 @Markdown.doc """
-    abstract type AbsLocalizedRing{RingType, RingElemType, MultSetType} <: Ring end
+    AbsLocalizedRing{RingType, RingElemType, MultSetType}
 
 The localization R[S⁻¹] of a ring R of type `RingType` with elements of type `RingElemType` at a 
 multiplicatively closed set S of type `MultSetType`. 
@@ -81,7 +78,7 @@ function inverted_set(W::AbsLocalizedRing{RingType, RingElemType, MultSetType}) 
 end
 
 @Markdown.doc """
-    function (W::AbsLocalizedRing{RingType, RingElemType, MultSetType})(f::AbstractAlgebra.Generic.Frac{RingElemType}) where {RingType, RingElemType, MultSetType} 
+    (W::AbsLocalizedRing{RingType, RingElemType, MultSetType})(f::AbstractAlgebra.Generic.Frac{RingElemType}) where {RingType, RingElemType, MultSetType} 
 
 Converts a fraction f = a//b to an element of the localized ring W.
 """
@@ -114,54 +111,35 @@ mutable struct LocalizedRing{RingType, RingElemType, MultSetType} <: AbsLocalize
   end
 end
 
-@Markdown.doc """
-    original_ring(W::LocalizedRing{RingType, RingElemType, MultSetType}) where {RingType, RingElemType, MultSetType} = W.R
-
-Returns the original ring R of type `RingType` before localization.
-"""
 original_ring(W::LocalizedRing{RingType, RingElemType, MultSetType}) where {RingType, RingElemType, MultSetType} = W.R
 
-@Markdown.doc """
-    inverted_set(W::LocalizedRing{RingType, RingElemType, MultSetType}) where {RingType, RingElemType, MultSetType} = W.R
-
-Returns the multiplicatively closed set S ⊂ R whose elements have been inverted to arrive at W = R[S⁻¹].
-"""
 inverted_set(W::LocalizedRing{RingType, RingElemType, MultSetType}) where {RingType, RingElemType, MultSetType} = W.S
 
 #################################################################################
 # Elements of localized rings                                                   #
 #################################################################################
 @Markdown.doc """
-    abstract type AbsLocalizedRingElem{RingType, RingElemType, MultSetType}
+    AbsLocalizedRingElem{RingType, RingElemType, MultSetType}
 
 The abstract type of an element of the localization R[S⁻¹] of a commutative ring 
 R of type `RingType` with elements of type `RingElemType` at a multiplicatively 
 closed set S of type `MultSetType`.
-
-For any concrete instance `F` of `AbsLocalizedRingElem` there must be the following 
-methods:
- * `fraction(::AbsLocalizedRingElem) -> <:AbstractAlgebra.Generic.Frac` returning the actual value of the element as a fraction in the localized ring;
- * `parent(::AbsLocalizedRingElem) -> <:AbsLocalizedRing` returning the parent ring of the element.
 """
 abstract type AbsLocalizedRingElem{RingType, RingElemType, MultSetType} end
 
 @Markdown.doc """
-    function fraction(f::T) where {T<:AbsLocalizedRingElem} 
+    fraction(f::T) where {T<:AbsLocalizedRingElem} 
 
 Returns the actual value of `f` as a fraction in the localization of the original ring.
-
-**Note:** This must be implemented for any concrete type of `AbsLocalizedRingElem`!
 """
 function fraction(f::T) where {T<:AbsLocalizedRingElem} 
   error("`fraction` is not implemented for the type $(typeof(f))")
 end
 
 @Markdown.doc """
-    function parent(f::T) where {T<:AbsLocalizedRingElem}
+    parent(f::T) where {T<:AbsLocalizedRingElem}
 
 Returns the parent ring R[S⁻¹] of `f`.
-
-**Note:** This must be implemented for any concrete type of `AbsLocalizedRingElem`!
 """
 function parent(f::T) where {T<:AbsLocalizedRingElem}
   error("`parent` is not implemented for the type $(typeof(f))")
@@ -235,7 +213,7 @@ end
 
 # Automatic conversion
 @Markdown.doc """
-    (W::LocalizedRing{RingType, RingElemType, MultSetType})(f::RingElemType) where {RingType, RingElemType, MultSetType}
+    (::LocalizedRing{RingType, RingElemType, MultSetType})(f::RingElemType) where {RingType, RingElemType, MultSetType}
 
 Part of the minimal interface for localized rings. Suppose W = R[S⁻¹]; then this routine 
 returns the conversion of an element f ∈ R to an element f//1 ∈ W.
@@ -255,7 +233,7 @@ an integer i to an element i//1 ∈ W.
 #################################################################
 
 @Markdown.doc """
-    abstract type AbsComplementOfPrimeIdeal{RingType, RingElemType} <:AbsMultSet{RingType, RingElemType} end
+    AbsComplementOfPrimeIdeal{RingType, RingElemType}
 
 Abstract type for the multiplicatively closed sets S = R \\ P for prime ideals P in a commutative ring R. 
 This is comprises both the complement of maximal ideals, as well as arbitrary prime ideals. 
@@ -265,14 +243,11 @@ distinction of the associated concrete types.
 abstract type AbsComplementOfPrimeIdeal{RingType, RingElemType} <:AbsMultSet{RingType, RingElemType} end
 
 @Markdown.doc """
-    mutable struct ComplementOfPrimeIdeal{RingType, RingElemType} <: AbsMultSet{RingType, RingElemType}
+    ComplementOfPrimeIdeal{RingType, RingElemType}
 
 The multiplicatively closed set S given as the complement S = R ∖ P
-of a prime ideal P in a multivariate polynomial ring R over some base field.
-
-**Note:** This needs the the following methods to be implemented:
- * `isprime(::Ideal{RingElemType}) -> Boolean` to check whether the given ideal is prime;
- * `Base.in(::RingElemType, ::Ideal{RingElemType}) -> Boolean` to check whether an element belongs to the ideal.
+of a prime ideal P in a commutative ring R of type `RingType` with elements 
+of type `RingElemType`.
 """
 mutable struct ComplementOfPrimeIdeal{RingType, RingElemType} <: AbsComplementOfPrimeIdeal{RingType, RingElemType}
   # essential fields
@@ -293,16 +268,22 @@ function Base.in(f::RingElemType, S::ComplementOfPrimeIdeal{RingType, RingElemTy
 end
 
 @Markdown.doc """
-    abstract type AbsLocalRing{RingType, RingElemType, MultSetType} <: AbsLocalizedRing{RingType, RingElemType, MultSetType} end
+    AbsLocalRing{RingType, RingElemType, MultSetType}
 
 Abstract type for local rings arising from localizations at prime ideals.
 """
 abstract type AbsLocalRing{RingType, RingElemType} <: AbsLocalizedRing{RingType, RingElemType, AbsComplementOfPrimeIdeal{RingType, RingElemType}} end
 
-original_ring(W::LocalizedRing{RingType, RingElemType, MultSetType}) where {RingType, RingElemType, MultSetType} = W.R
+function original_ring(W::AbsLocalRing{RingType, RingElemType}) where {RingType, RingElemType}
+  error("`original_ring` not implemented for local rings of type $(typeof(W))")
+end
+
+function inverted_set(W::AbsLocalRing{RingType, RingElemType}) where {RingType, RingElemType}
+  error("`inverted_set` not implemented for local rings of type $(typeof(W))")
+end
 
 @Markdown.doc """
-    abstract type AbsLocalRingElem{RingType, RingElemType} <: AbsLocalizedRingElem{RingType, RingElemType, AbsComplementOfPrimeIdeal{RingType, RingElemType} end
+    AbsLocalRingElem{RingType, RingElemType} <: AbsLocalizedRingElem{RingType, RingElemType, AbsComplementOfPrimeIdeal{RingType, RingElemType}
 
 Abstract type for elements of local rings arising from localizations at prime ideals.
 """
