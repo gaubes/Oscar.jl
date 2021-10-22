@@ -12,7 +12,7 @@ export fraction, parent
 export AbsLocalRing, AbsMaxLocalRing
 export LocalRing, MaxLocalRing, MPolyLocalRing, MPolyMaxLocalRing
 
-export AbsLocalRingIdeal, MPolyLocalizedIdeal, MPolyLocalRingIdeal, MPolyMaxLocalRingIdeal
+export AbsLocalRingIdeal, MPolyLocalizedIdeal, MPolyLocalRingIdeal, MPolyMaxLocalIdeal
 
 export localize, ideal
 
@@ -54,11 +54,11 @@ for some element ``f`` of type `RingElemType` in a ring ``R`` of type `RingType`
 abstract type AbsPowersOfElement{RingType, RingElemType} <: AbsMultSet{RingType, RingElemType} end
 
 @Markdown.doc """
-    generator(P::AbsPowersOfElement{RingType, RingElemType}) where {RingType, RingElemType}
+    denominators(P::AbsPowersOfElement{RingType, RingElemType}) where {RingType, RingElemType}
 
-Returns the element ``f`` for ``P = { fᵏ : f ∈ R, k ∈ ℕ₀ }``.
+Returns a list of factors ``(a₁,…,aᵣ)`` of the element ``f = a₁⋅…⋅aᵣ`` defining ``P = { fᵏ : f ∈ R, k ∈ ℕ₀ }``.
 """
-function generator(P::AbsPowersOfElement{RingType, RingElemType}) where {RingType, RingElemType}
+function denominators(P::AbsPowersOfElement{RingType, RingElemType}) where {RingType, RingElemType}
   error("method `generator(P::AbsPowersOfElement{RingType, RingElemType})` not implemented for `P` of type $(typeof(P))")
 end
 
@@ -93,48 +93,55 @@ function generator(P::PowersOfElement{RingType, RingElemType}) where {RingType, 
 end
 
 @Markdown.doc """
-    AbsComplementOfPrimeIdeal{RingType, RingElemType}
+    AbsComplementOfPrimeIdeal{RingType, IdealType, RingElemType}
 
 Abstract type for the multiplicatively closed sets S = R \\ P for prime ideals P in a commutative ring R. 
 This is comprises both the complement of maximal ideals, as well as arbitrary prime ideals. 
 In general, one expects different algorithmic backends for each one of the two cases. This will lead to a 
 distinction of the associated concrete types.
 """
-abstract type AbsComplementOfPrimeIdeal{RingType, RingElemType} <:AbsMultSet{RingType, RingElemType} end
+abstract type AbsComplementOfPrimeIdeal{RingType, IdealType, RingElemType} <:AbsMultSet{RingType, RingElemType} end
 
-function Base.in(f::RingElemType, S::AbsComplementOfPrimeIdeal{RingType, RingElemType}) where {RingType, RingElemType}
-  return !(f in S.P)
+function Base.in(f::RingElemType, S::AbsComplementOfPrimeIdeal{RingType,IdealType,  RingElemType}) where {RingType, IdealType, RingElemType}
+  error("Method `Base.in` is not implemented for complements of prime ideals of type $(typeof(S))")
 end
 
 @Markdown.doc """
-    ComplementOfPrimeIdeal{RingType, RingElemType}
+    ComplementOfPrimeIdeal{RingType, IdealType, RingElemType}
 
 The multiplicatively closed set S given as the complement S = R ∖ P
 of a prime ideal P in a commutative ring R of type `RingType` with elements 
 of type `RingElemType`.
+
+**WARNING:** It is never checked whether or not the given ideal is prime!
 """
-mutable struct ComplementOfPrimeIdeal{RingType, RingElemType} <: AbsComplementOfPrimeIdeal{RingType, RingElemType}
+mutable struct ComplementOfPrimeIdeal{RingType, IdealType, RingElemType} <: AbsComplementOfPrimeIdeal{RingType, IdealType, RingElemType}
   # essential fields
-  P::Ideal{RingElemType}
+  P::IdealType
 
   # fields for caching
   R::RingType # the base ring 
 
-  function ComplementOfPrimeIdeal(P::Ideal{RingElemType}) where {RingElemType}
-    S = new{parent_type(RingElemType), RingElemType}(P, base_ring(P))
-    isprime(S.P) || error( "the given ideal is not prime" )
+  function ComplementOfPrimeIdeal(R::RingType, P::IdealType) where {RingType, IdealType}
+    S = new{RingType, IdealType, elem_type(RingType)}(P, R)
     return S
   end
 end
 
-abstract type AbsComplementOfMaxIdeal{RingType, RingElemType} <: AbsComplementOfPrimeIdeal{RingType, RingElemType} end
+prime_ideal(S::ComplementOfPrimeIdeal{RingType, IdealType, RingElemType}) where {RingType, IdealType, RingElemType} = S.P::IdealType
+
+function Base.in(f::RingElemType, S::ComplementOfPrimeIdeal{RingType, IdealType, RingElemType}) where {RingType, IdealType, RingElemType}
+  return !(f in prime_ideal(S))
+end
+
+abstract type AbsComplementOfMaxIdeal{RingType, IdealType, RingElemType} <: AbsComplementOfPrimeIdeal{RingType, IdealType, RingElemType} end
 
 @Markdown.doc """
     MPolyComplementOfMaxIdeal{BaseRingType, BaseRingElemType, RingElemType} <: AbsComplementOfMaxIdeal{MPolyRing{BaseRingType}, RingElemType}
 
 Complement of a maximal ideal ``𝔪 = ⟨x₁-a₁,…,xₙ-aₙ⟩⊂ 𝕜[x₁,…xₙ]`` with ``aᵢ∈ 𝕜``.
 """
-mutable struct MPolyComplementOfMaxIdeal{BaseRingType, BaseRingElemType, RingElemType} <: AbsComplementOfMaxIdeal{MPolyRing{BaseRingType}, RingElemType}
+mutable struct MPolyComplementOfMaxIdeal{BaseRingType, BaseRingElemType, RingElemType} <: AbsComplementOfMaxIdeal{MPolyRing{BaseRingType}, MPolyIdeal{RingElemType}, RingElemType}
   # The parent polynomial ring 𝕜[x₁,…,xₙ]
   R::MPolyRing{BaseRingType}
   # The coordinates aᵢ of the point in 𝕜ⁿ corresponding to the maximal ideal
@@ -253,14 +260,33 @@ closed set S of type `MultSetType`.
 """
 abstract type AbsLocalizedRingElem{RingType, RingElemType, MultSetType} end
 
-@Markdown.doc """
-    fraction(f::T) where {T<:AbsLocalizedRingElem} 
+#@Markdown.doc """
+#    fraction(f::T) where {T<:AbsLocalizedRingElem} 
+#
+#Returns the actual value of `f` as a fraction in the localization of the original ring.
+#"""
+#function fraction(f::T) where {T<:AbsLocalizedRingElem} 
+#  error("`fraction` is not implemented for the type $(typeof(f))")
+#end
 
-Returns the actual value of `f` as a fraction in the localization of the original ring.
+@Markdown.doc """
+    numerator(f::T) where {T<:AbsLocalizedRingElem}
+
+Returns the numerator of `f`.
 """
-function fraction(f::T) where {T<:AbsLocalizedRingElem} 
-  error("`fraction` is not implemented for the type $(typeof(f))")
+function numerator(f::T) where {T<:AbsLocalizedRingElem}
+  error("`numerator` is not implemented for elements of type $(typeof(f))")
 end
+
+@Markdown.doc """
+    denominator(f::T) where {T<:AbsLocalizedRingElem}
+
+Returns the denominator of `f`.
+"""
+function denominator(f::T) where {T<:AbsLocalizedRingElem}
+  error("`denominator` is not implemented for elements of type $(typeof(f))")
+end
+
 
 @Markdown.doc """
     parent(f::T) where {T<:AbsLocalizedRingElem}
@@ -271,35 +297,55 @@ function parent(f::T) where {T<:AbsLocalizedRingElem}
   error("`parent` is not implemented for the type $(typeof(f))")
 end
 
+@Markdown.doc """
+    function (T::AbsLocalizedRing{RingType, RingElemType, MultSetType})(a::RingElemType, b::RingElemType) where {RingType, RingElemType, MultSetType}
+
+Conversion of a pair ``(a,b)`` to a fraction ``a/b`` as an element of `T`.
+"""
+function (T::AbsLocalizedRingElem{RingType, RingElemType, MultSetType})(a::RingElemType, b::RingElemType) where {RingType, RingElemType, MultSetType}
+  error("conversion of pairs ``(numerator, denominator)`` to elements of type $(typeof(T)) is not implemented")
+end
+
+
+########################################################################
+# Arithmetic; a dumb catchall implmentation, NOT performant!           #
+########################################################################
+
 function +(a::AbsLocalizedRingElem{RingType, RingElemType, MultSetType}, b::AbsLocalizedRingElem{RingType, RingElemType, MultSetType}) where {RingType, RingElemType, MultSetType}
   parent(a) == parent(b) || error("the arguments do not have the same parent ring")
-  return (parent(a))(fraction(a) + fraction(b))
+  if denominator(a) == denominator(b) 
+    return (parent(a))(numerator(a) + numerator(b), denominator(a))
+  end
+  return (parent(a))(numerator(a)*denominator(b) + numerator(b)*denominator(a), denominator(a)*denominator(b))
 end
 
 function -(a::AbsLocalizedRingElem{RingType, RingElemType, MultSetType}, b::AbsLocalizedRingElem{RingType, RingElemType, MultSetType}) where {RingType, RingElemType, MultSetType}
   parent(a) == parent(b) || error("the arguments do not have the same parent ring")
-  return (parent(a))(fraction(a) - fraction(b))
+  if denominator(a) == denominator(b) 
+    return (parent(a))(numerator(a) - numerator(b), denominator(a))
+  end
+  return (parent(a))(numerator(a)*denominator(b) - numerator(b)*denominator(a), denominator(a)*denominator(b))
 end
 
 function *(a::AbsLocalizedRingElem{RingType, RingElemType, MultSetType}, b::AbsLocalizedRingElem{RingType, RingElemType, MultSetType}) where {RingType, RingElemType, MultSetType}
   parent(a) == parent(b) || error("the arguments do not have the same parent ring")
-  return (parent(a))(fraction(a) * fraction(b))
+  return (parent(a))(numerator(a)*numerator(b), denominator(a)*denominator(b))
 end
 
 function Base.:(//)(a::AbsLocalizedRingElem{RingType, RingElemType, MultSetType}, b::AbsLocalizedRingElem{RingType, RingElemType, MultSetType}) where {RingType, RingElemType, MultSetType}
   parent(a) == parent(b) || error("the arguments do not have the same parent ring")
-  numerator(fraction(b)) in inverted_set(parent(b)) || error("the second argument is not a unit in this local ring")
-  return (parent(a))(fraction(a) // fraction(b))
+  numerator(b) in inverted_set(parent(b)) || error("the second argument is not a unit in this local ring")
+  return (parent(a))(numerator(a)*denominator(b), numerator(b)*denominator(a))
 end
 
 function ==(a::T, b::T) where {T<:AbsLocalizedRingElem}
   parent(a) == parent(b) || error("the arguments do not have the same parent ring")
-  return parent(a)(fraction(a) == fraction(b))
+  return numerator(a)*denominator(b) == numerator(b)*denominator(a)
 end
 
-function ^(a::T, i::Int) where {T<:AbsLocalizedRingElem}
+function ^(a::T, i::Oscar.IntegerUnion) where {T<:AbsLocalizedRingElem}
   parent(a) == parent(b) || error("the arguments do not have the same parent ring")
-  return parent(a)(fraction(a)^i)
+  return parent(a)(numenator(a)^i, denominator(a)^i)
 end
 
 #################################################################################
@@ -312,11 +358,12 @@ A minimal implementation for elements f in a localized ring R[S⁻¹] where
 R is of type `RingType`, with elements of type `RingElemType`, and 
 S of type `MultSetType`. 
 """
-mutable struct LocalizedRingElem{RingType, RingElemType, MultSetType}
-  frac::AbstractAlgebra.Generic.Frac{RingElemType} # The element of the localized ring as a fraction with admissible denominator
-  R_loc::LocalizedRing{RingType, RingElemType, MultSetType} # the parent ring before localization 
+mutable struct LocalizedRingElem{RingType, RingElemType, MultSetType} <: AbsLocalizedRingElem{RingType, RingElemType, MultSetType}
+  numerator::RingElemType
+  denominator::RingElemType
+  R_loc::LocalizedRing{RingType, RingElemType, MultSetType} # the parent ring
 
-  function LocalizedRingElem(f::AbstractAlgebra.Generic.Frac{RingElemType}, R_loc::LocalizedRing{RingType, RingElemType, MultSetType}) where {RingType, RingElemType, MultSetType}
+  function LocalizedRingElem(R_loc::LocalizedRing{RingType, RingElemType, MultSetType}, a::RingElemType, b::RingElemType) where {RingType, RingElemType, MultSetType}
     # Perform some sanity checks
     RingType == parent_type(RingElemType) || error(
 	"The given type of ring is incompatible with the given element type"
@@ -324,7 +371,7 @@ mutable struct LocalizedRingElem{RingType, RingElemType, MultSetType}
     MultSetType <: AbsMultSet{RingType, RingElemType} || error(
 	"The given type of the multiplicatively closed set is incompatible with the given ring types"
 	)
-    return new{RingType, RingElemType, MultSetType}(f, R_loc)
+    return new{RingType, RingElemType, MultSetType}(a, b, R_loc)
   end
 end
 
@@ -333,8 +380,12 @@ function parent(f::LocalizedRingElem{RingType, RingElemType, MultSetType}) where
   return f.R_loc
 end
 
-function frac(f::LocalizedRingElem{RingType, RingElemType, MultSetType}) where {RingType, RingElemType, MultSetType}
-  return f.frac
+function numerator(f::LocalizedRingElem{RingType, RingElemType, MultSetType}) where {RingType, RingElemType, MultSetType}
+  return f.numerator
+end
+
+function denominator(f::LocalizedRingElem{RingType, RingElemType, MultSetType}) where {RingType, RingElemType, MultSetType}
+  return f.denominator
 end
 
 # Automatic conversion
@@ -344,7 +395,8 @@ end
 Part of the minimal interface for localized rings. Suppose W = R[S⁻¹]; then this routine 
 returns the conversion of an element f ∈ R to an element f//1 ∈ W.
 """
-(W::LocalizedRing{RingType, RingElemType, MultSetType})(f::RingElemType) where {RingType, RingElemType, MultSetType} = LocalizedRingElem((FractionField(original_ring(W)))(f), W)
+(W::LocalizedRing{RingType, RingElemType, MultSetType})(f::RingElemType) where {RingType, RingElemType, MultSetType} = LocalizedRingElem(W, f, one(parent(f)))
+(W::LocalizedRing{RingType, RingElemType, MultSetType})(a::RingElemType, b::RingElemType) where {RingType, RingElemType, MultSetType} = LocalizedRingElem(W, a, b)
 
 @Markdown.doc """
     (W::LocalizedRing{RingType, RingElemType, MultSetType})(i::Int) where {RingType, RingElemType, MultSetType}
@@ -444,6 +496,11 @@ function inverted_set(W::MPolyLocalRing{BaseRingType, RingElemType}) where {Base
   return W.S
 end
 
+
+########################################################################
+# Elements of local polynomial rings                                   #
+########################################################################
+
 mutable struct MPolyLocalRingElem{BaseRingType, RingElemType} <: AbsLocalRingElem{MPolyRing{BaseRingType}, MPolyElem{BaseRingType}} 
   frac::AbstractAlgebra.Generic.Frac{RingElemType}
   R_loc::MPolyLocalRing{BaseRingType, RingElemType}
@@ -457,12 +514,49 @@ mutable struct MPolyLocalRingElem{BaseRingType, RingElemType} <: AbsLocalRingEle
 end
 
 fraction(a::MPolyLocalRingElem{BaseRingType, RingElemType}) where {BaseRingType, RingElemType} = a.frac
+numerator(a::MPolyLocalRingElem{BaseRingType, RingElemType}) where {BaseRingType, RingElemType} = numerator(a.frac)
+denominator(a::MPolyLocalRingElem{BaseRingType, RingElemType}) where {BaseRingType, RingElemType} = denominator(a.frac)
+
+
+function +(a::MPolyLocalRingElem{BaseRingType, RingElemType}, b::MPolyLocalRingElem{BaseRingType, RingElemType}) where {BaseRingType, RingElemType}
+  parent(a) == parent(b) || error("the arguments do not have the same parent ring")
+  return (parent(a))(fraction(a) + fraction(b))
+end
+
+function -(a::MPolyLocalRingElem{BaseRingType, RingElemType}, b::MPolyLocalRingElem{BaseRingType, RingElemType}) where {BaseRingType, RingElemType}
+  parent(a) == parent(b) || error("the arguments do not have the same parent ring")
+  return (parent(a))(fraction(a) - fraction(b))
+end
+
+function *(a::MPolyLocalRingElem{BaseRingType, RingElemType}, b::MPolyLocalRingElem{BaseRingType, RingElemType}) where {BaseRingType, RingElemType}
+  parent(a) == parent(b) || error("the arguments do not have the same parent ring")
+  return (parent(a))(fraction(a) * fraction(b))
+end
+
+function Base.:(//)(a::MPolyLocalRingElem{BaseRingType, RingElemType}, b::MPolyLocalRingElem{BaseRingType, RingElemType}) where {BaseRingType, RingElemType}
+  parent(a) == parent(b) || error("the arguments do not have the same parent ring")
+  numerator(fraction(b)) in inverted_set(parent(b)) || error("the second argument is not a unit in this local ring")
+  return (parent(a))(fraction(a) // fraction(b))
+end
+
+function ==(a::T, b::T) where {T<:MPolyLocalRingElem}
+  parent(a) == parent(b) || error("the arguments do not have the same parent ring")
+  return fraction(a) == fraction(b)
+end
+
+function ^(a::T, i::Oscar.IntegerUnion) where {T<:MPolyLocalRingElem}
+  parent(a) == parent(b) || error("the arguments do not have the same parent ring")
+  return parent(a)(fraction(a)^i)
+end
+
 
 parent(a::MPolyLocalRingElem{BaseRingType, RingElemType}) where {BaseRingType, RingElemType} = a.R_loc
 
 (W::MPolyLocalRing{BaseRingType, RingElemType})(f::RingElemType) where {BaseRingType, RingElemType} = MPolyLocalRingElem((FractionField(original_ring(W)))(f), W)
+(W::MPolyLocalRing{BaseRingType, RingElemType})(a::RingElemType, b::RingElemType) where {BaseRingType, RingElemType} = MPolyLocalRingElem(a//b, W)
 
 (W::MPolyLocalRing{BaseRingType, RingElemType})(f::AbstractAlgebra.Generic.Frac{RingElemType}) where {BaseRingType, RingElemType} = MPolyLocalRingElem(f, W)
+
 
 ###################################################################
 # Honest local rings arising from localizations at maximal ideals #
@@ -490,9 +584,11 @@ Abstract type for elements of local rings arising from localizations at prime id
 """
 abstract type AbsMaxLocalRingElem{RingType, RingElemType} <: AbsLocalizedRingElem{RingType, RingElemType, AbsComplementOfMaxIdeal{RingType, RingElemType}} end
 
+
 ############################################################################
 # Localizations of polynomial rings over admissible fields at prime ideals #
 ############################################################################
+
 @Markdown.doc """
     mutable struct MPolyMaxLocalRing{BaseRingType, BaseRingElemType, RingElemType} <: AbsLocalRing{MPolyRing{BaseRingType}, MPolyElem{BaseRingType}}
 
@@ -528,6 +624,11 @@ function inverted_set(W::MPolyMaxLocalRing{BaseRingType, BaseRingElemType, RingE
   return W.S
 end
 
+
+########################################################################
+# Elements of localizations of polynomial rings at maximal ideals      #
+########################################################################
+
 mutable struct MPolyMaxLocalRingElem{BaseRingType, BaseRingElemType, RingElemType} <: AbsLocalRingElem{MPolyRing{BaseRingType}, MPolyElem{BaseRingType}} 
   frac::AbstractAlgebra.Generic.Frac{RingElemType}
   R_loc::MPolyMaxLocalRing{BaseRingType, BaseRingElemType, RingElemType}
@@ -540,12 +641,15 @@ mutable struct MPolyMaxLocalRingElem{BaseRingType, BaseRingElemType, RingElemTyp
 end
 
 fraction(a::MPolyMaxLocalRingElem{BaseRingType, BaseRingElemType, RingElemType}) where {BaseRingType, BaseRingElemType, RingElemType} = a.frac
+numerator(a::MPolyMaxLocalRingElem{BaseRingType, BaseRingElemType, RingElemType}) where {BaseRingType, BaseRingElemType, RingElemType} = numerator(a.frac)
+denominator(a::MPolyMaxLocalRingElem{BaseRingType, BaseRingElemType, RingElemType}) where {BaseRingType, BaseRingElemType, RingElemType} = denominator(a.frac)
 
 parent(a::MPolyMaxLocalRingElem{BaseRingType, BaseRingElemType, RingElemType}) where {BaseRingType, BaseRingElemType, RingElemType} = a.R_loc
 
 (W::MPolyMaxLocalRing{BaseRingType, BaseRingElemType, RingElemType})(f::RingElemType) where {BaseRingType, BaseRingElemType, RingElemType} = MPolyLocalRingElem((FractionField(original_ring(W)))(f), W)
 
 (W::MPolyMaxLocalRing{BaseRingType, BaseRingElemType, RingElemType})(f::AbstractAlgebra.Generic.Frac{RingElemType}) where {BaseRingType, BaseRingElemType, RingElemType} = MPolyLocalRingElem(f, W)
+
 
 ############################################################################
 # Ideals in localized rings                                                #
@@ -565,7 +669,7 @@ mutable struct MPolyLocalizedIdeal{BaseRingType, RingElemType, MultSetType} <: A
   # to be filled with content
 end
 
-mutable struct MPolyLocalRingIdeal{BaseRingType, RingElemType} <: AbsLocalRingIdeal{MPolyRing{BaseRingType}, RingElemType}
+mutable struct MPolyLocalIdeal{BaseRingType, RingElemType} <: AbsLocalRingIdeal{MPolyRing{BaseRingType}, RingElemType}
   # to be filled with content
 end
 
@@ -687,12 +791,12 @@ type `RingElemType` at maximal ideals ``𝔪``.
 abstract type AbsMaxLocalRingIdeal{RingType, LocRingType, RingElemType} <: AbsLocalizedRingIdeal{RingType, RingElemType, AbsComplementOfMaxIdeal{RingType, RingElemType}} end
 
 @Markdown.doc """
-    MPolyMaxLocalRingIdeal{BaseRingType, BaseRingElemType, RingElemType} <: AbsMaxLocalRingIdeal{MPolyRing{BaseRingType}, MPolyMaxLocalRing{BaseRingType, BaseRingElemType, RingElemType}, RingElemType} 
+    MPolyMaxLocalIdeal{BaseRingType, BaseRingElemType, RingElemType} <: AbsMaxLocalRingIdeal{MPolyRing{BaseRingType}, MPolyMaxLocalRing{BaseRingType, BaseRingElemType, RingElemType}, RingElemType} 
 
 Ideals in localizations of polynomial rings ``R = 𝕜[x₁,…,xₙ]`` at maximal ideals 
 ``𝔪 = ⟨x₁-a₁,…,xₙ-aₙ⟩`` with coefficients ``aᵢ∈ 𝕜``.
 """
-mutable struct MPolyMaxLocalRingIdeal{BaseRingType, BaseRingElemType, RingElemType} <: AbsMaxLocalRingIdeal{MPolyRing{BaseRingType}, MPolyMaxLocalRing{BaseRingType, BaseRingElemType, RingElemType}, RingElemType} 
+mutable struct MPolyMaxLocalIdeal{BaseRingType, BaseRingElemType, RingElemType} <: AbsMaxLocalRingIdeal{MPolyRing{BaseRingType}, MPolyMaxLocalRing{BaseRingType, BaseRingElemType, RingElemType}, RingElemType} 
   # the initial set of generators, not to be changed ever!
   gens::LocalizedBiPolyArray{MPolyMaxLocalRing{BaseRingType, BaseRingElemType, RingElemType}, RingElemType}
   # the ambient ring for this ideal
@@ -703,7 +807,7 @@ mutable struct MPolyMaxLocalRingIdeal{BaseRingType, BaseRingElemType, RingElemTy
   dimension::Int
  
 
-  function MPolyMaxLocalRingIdeal(R_loc::MPolyMaxLocalRing{BaseRingType, BaseRingElemType, RingElemType}, f::Vector{AbstractAlgebra.Generic.Frac{RingElemType}}) where {BaseRingType, BaseRingElemType, RingElemType}
+  function MPolyMaxLocalIdeal(R_loc::MPolyMaxLocalRing{BaseRingType, BaseRingElemType, RingElemType}, f::Vector{AbstractAlgebra.Generic.Frac{RingElemType}}) where {BaseRingType, BaseRingElemType, RingElemType}
     R = original_ring(R_loc)
     k = base_ring(R)
     S = inverted_set(R_loc)
@@ -718,30 +822,30 @@ mutable struct MPolyMaxLocalRingIdeal{BaseRingType, BaseRingElemType, RingElemTy
   end
 end
 
-gens(I::MPolyMaxLocalRingIdeal{BaseRingType, BaseRingElemType, RingElemType}) where {BaseRingType, BaseRingElemType, RingElemType} = I.gens
-ambient_ring(I::MPolyMaxLocalRingIdeal{BaseRingType, BaseRingElemType, RingElemType}) where {BaseRingType, BaseRingElemType, RingElemType} = I.R_loc
+gens(I::MPolyMaxLocalIdeal{BaseRingType, BaseRingElemType, RingElemType}) where {BaseRingType, BaseRingElemType, RingElemType} = I.gens
+ambient_ring(I::MPolyMaxLocalIdeal{BaseRingType, BaseRingElemType, RingElemType}) where {BaseRingType, BaseRingElemType, RingElemType} = I.R_loc
 
-function shift(I::MPolyMaxLocalRingIdeal{BaseRingType, BaseRingElemType, RingElemType}) where {BaseRingType, BaseRingElemType, RingElemType}
+function shift(I::MPolyMaxLocalIdeal{BaseRingType, BaseRingElemType, RingElemType}) where {BaseRingType, BaseRingElemType, RingElemType}
   lbpa = I.gens
   return shift(lbpa)
 end
 
-function dimension(I::MPolyMaxLocalRingIdeal{BaseRingType, BaseRingElemType, RingElemType}) where {BaseRingType, BaseRingElemType, RingElemType} 
+function dimension(I::MPolyMaxLocalIdeal{BaseRingType, BaseRingElemType, RingElemType}) where {BaseRingType, BaseRingElemType, RingElemType} 
   error("not implemented")
 end
 
-function MPolyMaxLocalRingIdeal(R_loc::MPolyMaxLocalRing{BaseRingType, BaseRingElemType, RingElemType}, I::MPolyIdeal{RingElemType}) where {BaseRingType, BaseRingElemType, RingElemType} 
+function MPolyMaxLocalIdeal(R_loc::MPolyMaxLocalRing{BaseRingType, BaseRingElemType, RingElemType}, I::MPolyIdeal{RingElemType}) where {BaseRingType, BaseRingElemType, RingElemType} 
   if length(gens(I))==0 
-    return MPolyMaxLocalRingIdeal(R_loc, Vector{AbstractAlgebra.Generic.Frac{RingElemType}}())
+    return MPolyMaxLocalIdeal(R_loc, Vector{AbstractAlgebra.Generic.Frac{RingElemType}}())
   end
   R = original_ring(R_loc)
   Q = AbstractAlgebra.Generic.FractionField(R)
   base_ring(I) == R || error("ideal does not belong to the original ring before localization")
-  return MPolyMaxLocalRingIdeal(R_loc, Q.(gens(I)))
+  return MPolyMaxLocalIdeal(R_loc, Q.(gens(I)))
 end
 
 function ideal(R_loc::MPolyMaxLocalRing{BaseRingType, BaseRingElemType, RingElemType}, I::MPolyIdeal{RingElemType}) where {BaseRingType, BaseRingElemType, RingElemType} 
-  return MPolyMaxLocalRingIdeal(R_loc, I)
+  return MPolyMaxLocalIdeal(R_loc, I)
 end
 
 
@@ -749,14 +853,14 @@ end
 # Groebner bases                                                              #
 ###############################################################################
 
-function groebner_assure(I::MPolyMaxLocalRingIdeal{BaseRingType, BaseRingElemType, RingElemType}) where {BaseRingType, BaseRingElemType, RingElemType}
+function groebner_assure(I::MPolyMaxLocalIdeal{BaseRingType, BaseRingElemType, RingElemType}) where {BaseRingType, BaseRingElemType, RingElemType}
   if isdefined(I, :groebner_basis) 
     return I.groebner_basis
   end
   gb = Singular.std(singular_gens(gens(I)))
 end
 
-function groebner_basis(I::MPolyMaxLocalRingIdeal{BaseRingType, BaseRingElemType, RingElemType}; ord::Symbol = :negdegrevlex) where {BaseRingType, BaseRingElemType, RingElemType}
+function groebner_basis(I::MPolyMaxLocalIdeal{BaseRingType, BaseRingElemType, RingElemType}; ord::Symbol = :negdegrevlex) where {BaseRingType, BaseRingElemType, RingElemType}
   if ord != ordering(gens(I))
     B = LocalizedBiPolyArray(ambient_ring(I), oscar_gens(gens(I)), ordering = ord)
     singular_assure!(B)
