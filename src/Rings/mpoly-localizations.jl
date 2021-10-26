@@ -1,5 +1,5 @@
 export AbsMultSet, AbsPowersOfElement, AbsComplementOfPrimeIdeal
-export FmpzComplementOfPrimeIdeal, FmpzPowersOfElement
+export FmpzComplementOfPrimeIdeal, FmpzPowersOfElement, FmpzComplementOfZeroIdeal
 export MPolyComplementOfPrimeIdeal, MPolyComplementOfMaxIdeal
 
 
@@ -119,6 +119,7 @@ function Base.in(f::RingElemType, S::AbsComplementOfPrimeIdeal{RingType,IdealTyp
   error("Method `Base.in` is not implemented for complements of prime ideals of type $(typeof(S))")
 end
 
+
 @Markdown.doc """
     FmpzComplementOfPrimeIdeal
 
@@ -134,24 +135,56 @@ mutable struct FmpzComplementOfPrimeIdeal <: AbsComplementOfPrimeIdeal{FlintInte
   end
 end
 
+FmpzComplementOfPrimeIdeal(i::Int) = FmpzComplementOfPrimeIdeal(ZZ(i))
+
 function Base.in(b::fmpz, S::FmpzComplementOfPrimeIdeal)
   return !(divides(b, S.p)[1])
 end
 
+@Markdown.doc """
+    FmpzComplementOfZeroIdeal <: AbsComplementOfPrimeIdeal{FlintIntegerRing, Hecke.ZZIdl, fmpz}
+
+The complement of the zero ideal in `ℤ`.
+"""
+mutable struct FmpzComplementOfZeroIdeal <: AbsComplementOfPrimeIdeal{FlintIntegerRing, Hecke.ZZIdl, fmpz}
+  function FmpzComplementOfZeroIdeal() 
+    return new{}()
+  end
+end
+
+function Base.in(b::fmpz, S::FmpzComplementOfZeroIdeal) 
+  return !(b == zero(ZZ))
+end
+
+@Markdown.doc """
+    MPolyComplementOfPrimeIdeal{BaseRingType, RingElemType} <: AbsComplementOfPrimeIdeal{MPolyRing{BaseRingType}, MPolyIdeal{RingElemType}, RingElemType}
+
+The complement of a prime ideal `P ⊂ 𝕜[x₁,…,xₙ]` in a multivariate polynomial ring 
+with elements of type `RingElemType` over a base ring `𝕜` of type `BaseRingType`.
+"""
 mutable struct MPolyComplementOfPrimeIdeal{BaseRingType, RingElemType} <: AbsComplementOfPrimeIdeal{MPolyRing{BaseRingType}, MPolyIdeal{RingElemType}, RingElemType}
   # The parent polynomial ring 𝕜[x₁,…,xₙ]
   R::MPolyRing{BaseRingType}
   # The prime ideal whose complement this is
   P::MPolyIdeal{RingElemType}
 
-  function MPolyComplementOfPrimeIdeal(P::MPolyIdeal{RingElemType}) where {RingElemType}
+  function MPolyComplementOfPrimeIdeal(
+      P::MPolyIdeal{RingElemType}; 
+      check::Bool=false
+    ) where {RingElemType}
     R = base_ring(P)
-    isprime(P) || error("the ideal $P is not prime")
+    check && (isprime(P) || error("the ideal $P is not prime"))
     return new{typeof(coefficient_ring(R)), elem_type(R)}(R, P)
   end
 end
 
-prime_ideal(S::MPolyComplementOfPrimeIdeal{BaseRingType, RingElemType}) where {BaseRingType, RingElemType} = S.P
+ambient_ring(
+    W::MPolyComplementOfPrimeIdeal{BaseRingType, RingElemType}
+  ) where {BaseRingType, RingElemType} = S.R
+
+prime_ideal(
+    S::MPolyComplementOfPrimeIdeal{BaseRingType, RingElemType}
+  ) where {BaseRingType, RingElemType} = S.P
 
 function Base.in(f::RingElemType, S::MPolyComplementOfPrimeIdeal{BaseRingType, RingElemType}) where {BaseRingType, RingElemType}
   return !(f in prime_ideal(S))
@@ -289,14 +322,11 @@ original_ring(W::FmpzLocalizedRing{MultSetType}) where {MultSetType} = ZZ::Flint
 
 inverted_set(W::FmpzLocalizedRing{MultSetType}) where {MultSetType} = W.S::MultSetType
 
-function localize_at(S::FmpzComplementOfPrimeIdeal)
-  return FmpzLocalizedRing(S)
-end
+localize_at(S::FmpzComplementOfPrimeIdeal) = FmpzLocalizedRing(S)
 
-function localize_at(S::FmpzPowersOfElement)
-  return FmpzLocalizedRing(S)
-end
-  
+localize_at(S::FmpzComplementOfZeroIdeal) = FmpzLocalizedRing(S)
+
+localize_at(S::FmpzPowersOfElement) = FmpzLocalizedRing(S)
 
 
 #################################################################################
@@ -338,6 +368,10 @@ function parent(f::T) where {T<:AbsLocalizedRingElem}
   error("`parent` is not implemented for the type $(typeof(f))")
 end
 
+# printing
+function Base.show(io::IO, f::T) where {T<:AbsLocalizedRingElem}
+  print(io, "$(numerator(f))//$(denominator(f))")
+end
 
 ########################################################################
 # Arithmetic; a dumb catchall implmentation, NOT performant!           #
@@ -448,10 +482,13 @@ an integer i to an element i//1 ∈ W.
 (W::FmpzLocalizedRing{MultSetType})(i::Oscar.IntegerUnion) where {MultSetType} = FmpzLocalizedRingElem(W, ZZ(i), one(ZZ))
 (W::FmpzLocalizedRing{MultSetType})(a::Oscar.IntegerUnion, b::Oscar.IntegerUnion) where {MultSetType} = FmpzLocalizedRingElem(W, ZZ(a), ZZ(b))
 
-# printing
-function Base.show(io::IO, f::FmpzLocalizedRingElem{MultSetType}) where {MultSetType}
-  print(io, "$(numerator(f))//$(denominator(f))")
-end
+# extension of Oscar's ring interface
+one(W::FmpzLocalizedRing{MultSetType}) where {MultSetType} = W(1)
+zero(W::FmpzLocalizedRing{MultSetType}) where {MultSetType} = W(0)
+
+elem_type(W::FmpzLocalizedRing{MultSetType}) where {MultSetType} = FmpzLocalizedRingElem{MultSetType}
+elem_type(T::Type{FmpzLocalizedRing{MultSetType}}) where {MultSetType} = FmpzLocalizedRingElem{MultSetType}
+
 
 #################################################################
 # Localizations of polynomial rings                             #
