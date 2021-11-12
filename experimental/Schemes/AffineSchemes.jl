@@ -1,7 +1,7 @@
 import AbstractAlgebra.Ring
 import Base: intersect
 
-export Spec, OO
+export Spec, OO, EmptyScheme
 export ⊂
 
 export is_open_embedding, is_closed_embedding, hypersurface_complement, subscheme, name_of, set_name!
@@ -25,6 +25,7 @@ struct EmptyScheme{BaseRingType, BaseRingElemType}<:Scheme{BaseRingType, BaseRin
     return new{BaseRingType, elem_type(k)}(k)
   end
 end
+
 
 @doc Markdown.doc"""
 AffineScheme{BaseRingType<:Ring, BaseRingElemType<:RingElement, RingType<:MPolyRing, RingElemType<:MPolyElem} <: Scheme{BaseRingType} 
@@ -56,8 +57,9 @@ end
 
 
 ### Getter functions
-
 OO(X::Spec) = X.OO
+
+EmptyScheme(X::Spec) = EmptyScheme(coefficient_ring(base_ring(OO(X))))
 
 function name_of(X::Spec) 
   if isdefined(X, :name)
@@ -160,6 +162,13 @@ issubset(X::EmptyScheme{BRT, BRET}, Y::Scheme{BRT, BRET}) where {BRT, BRET} = tr
 
 function issubset(
     X::Spec{BRT, BRET, RT, RET, MST1}, 
+    E::EmptyScheme{BRT, BRET}
+  ) where {BRT, BRET, RT, RET, MST1} 
+  return one(localized_ring(OO(X))) in localized_modulus(OO(X))
+end
+
+function issubset(
+    X::Spec{BRT, BRET, RT, RET, MST1}, 
     Y::Spec{BRT, BRET, RT, RET, MST2}
   ) where {BRT, BRET, RT, RET, MST1<:HypSurfComp, MST2<:HypSurfComp}
   R = base_ring(OO(X))
@@ -200,6 +209,8 @@ function is_closed_embedding(
   return issubset(J, localized_modulus(OO(X)))
 end
 
+==(X::Scheme{BRT, BRET}, Y::Scheme{BRT, BRET}) where {BRT, BRET} = issubset(X, Y) && issubset(Y, X)
+
 ### set operations
 
 intersect(E::EmptyScheme{BRT, BRET}, X::Scheme{BRT, BRET}) where {BRT, BRET} = E
@@ -238,6 +249,7 @@ function closure(
   return Spec(MPolyQuoLocalizedRing(R, ideal(R, numerator.(oscar_gens(lbpa))), inverted_set(OO(Y))))
 end
 
+closure(E::EmptyScheme{BRT, BRET}, Y::Spec{BRT, BRET, RT, RET, MST2}) where {BRT, BRET, RT, RET, MST2} = E
 
 
 ########################################################################
@@ -264,6 +276,15 @@ end
 pullback(phi::SpecHom) = phi.pullback
 domain(phi::SpecHom) = phi.domain
 codomain(phi::SpecHom) = phi.codomain
+
+### constructors
+function inclusion(
+    X::Spec{BRT, BRET, RT, RET, MST2},
+    Y::Spec{BRT, BRET, RT, RET, MST1}
+  ) where {BRT, BRET, RT, RET, MST1, MST2}
+  issubset(X, Y) || error("the first argument is not a subset of the second")
+  return SpecHom(X, Y, gens(base_ring(OO(Y))))
+end
 
 ### functionality
 function preimage(
